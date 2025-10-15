@@ -49,11 +49,7 @@
 </head>
 <body>
 
-<audio id="tick" src="atom-tick.mp3" preload="auto"></audio>
-
-<div class="clock-container" id="clock">
-  <!-- Zeiteinheiten werden hier dynamisch erstellt -->
-</div>
+<div class="clock-container" id="clock"></div>
 
 <script>
 const units = [
@@ -103,36 +99,29 @@ units.forEach(u => {
   unitElements[u.name] = {value, barFill};
 });
 
-// Urknall Startzeit (ca. 13.8 Mrd Jahre)
-const bigBangTime = -13.8e9 * 365.25 * 24 * 3600 * 1000;
-const tick = document.getElementById("tick");
+// Wir simulieren die Zeit seit dem Urknall, aber normalisiert
+const bigBangYears = 13.8e9; // Jahre seit Urknall
+const startTime = performance.now();
 
-// Hilfsfunktionen
 function pad(num, size) {
   let s = "000" + num;
   return s.substr(s.length - size);
 }
 
-// Letzte Werte für Tick-Sound
-let lastSecond = -1;
-let lastMs = -1;
-let lastMicro = -1;
-
-function playTick(current, last) {
-  if(current !== last) tick.currentTime = 0, tick.play();
-}
-
 function updateClock() {
-  const now = Date.now();
-  const elapsedMs = now - bigBangTime;
+  const elapsedMs = performance.now() - startTime;
+  const elapsedSeconds = elapsedMs / 1000;
 
-  const eon = Math.floor(elapsedMs / (1e9 * 365.25 * 24 * 3600 * 1000));
-  const year = Math.floor(elapsedMs / (365.25 * 24 * 3600 * 1000)) % 1e9;
-  const month = Math.floor((elapsedMs % (365.25 * 24 * 3600 * 1000)) / (30*24*3600*1000)) + 1;
-  const day = Math.floor((elapsedMs % (30*24*3600*1000)) / (24*3600*1000)) + 1;
-  const hour = Math.floor((elapsedMs % (24*3600*1000)) / (3600*1000));
-  const minute = Math.floor((elapsedMs % (3600*1000)) / (60*1000));
-  const second = Math.floor((elapsedMs % (60*1000)) / 1000);
+  // Simulation: 1 Jahr = 1 Sekunde für flüssige Animation
+  const yearsElapsed = bigBangYears + elapsedSeconds; // addiert fiktiv jedes Sekunde ein Jahr
+  const eon = Math.floor(yearsElapsed / 1e9);
+  const year = Math.floor(yearsElapsed % 1e9);
+
+  const month = Math.floor((elapsedSeconds % (30*24*3600)) / (30*24*3600/12)) + 1;
+  const day = Math.floor((elapsedSeconds % (30*24*3600)) / (24*3600)) + 1;
+  const hour = Math.floor((elapsedSeconds % (24*3600)) / 3600);
+  const minute = Math.floor((elapsedSeconds % 3600) / 60);
+  const second = Math.floor(elapsedSeconds % 60);
   const ms = Math.floor(elapsedMs % 1000);
 
   const micro = Math.floor((elapsedMs * 1000) % 1000);
@@ -155,21 +144,13 @@ function updateClock() {
   unitElements["Femtosekunden"].value.textContent = pad(femto,3);
   unitElements["Attosekunden"].value.textContent = pad(atto,3);
 
-  // Balken füllen
+  // Balken
   unitElements["Millisekunden"].barFill.style.width = (ms/1000*100)+"%";
   unitElements["Mikrosekunden"].barFill.style.width = (micro/1000*100)+"%";
   unitElements["Nanosekunden"].barFill.style.width = (nano/1000*100)+"%";
   unitElements["Pikosekunden"].barFill.style.width = (pico/1000*100)+"%";
   unitElements["Femtosekunden"].barFill.style.width = (femto/1000*100)+"%";
   unitElements["Attosekunden"].barFill.style.width = (atto/1000*100)+"%";
-
-  // Atom-Uhr Sound
-  playTick(second, lastSecond);
-  playTick(ms, lastMs);
-  playTick(micro, lastMicro);
-  lastSecond = second;
-  lastMs = ms;
-  lastMicro = micro;
 
   requestAnimationFrame(updateClock);
 }
