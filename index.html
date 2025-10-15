@@ -107,30 +107,30 @@ function updateClock() {
   const second = now.getSeconds();
   const ms = now.getMilliseconds();
 
-  // Mikro-, Nano-, Piko-, Femto-, Attosekunden aus ms
-  const micro = Math.floor(ms * 1000);
-  const nano = Math.floor(ms * 1e6);
-  const pico = Math.floor(ms * 1e9);
-  const femto = Math.floor(ms * 1e12);
-  const atto = Math.floor(ms * 1e15);
+  // Mikro-, Nano-, Piko-, Femto-, Attosekunden
+  const micro = ms * 1000 + performance.now() % 1; // microsekunden
+  const nano = ms * 1e6 + performance.now() % 1; // nanos
+  const pico = ms * 1e9 + performance.now() % 1;
+  const femto = ms * 1e12 + performance.now() % 1;
+  const atto = ms * 1e15 + performance.now() % 1;
 
   unitElements["Stunden"].value.textContent = pad(hour,2);
   unitElements["Minuten"].value.textContent = pad(minute,2);
   unitElements["Sekunden"].value.textContent = pad(second,2);
   unitElements["Millisekunden"].value.textContent = pad(ms,3);
-  unitElements["Mikrosekunden"].value.textContent = pad(micro%1000,3);
-  unitElements["Nanosekunden"].value.textContent = pad(nano%1000,3);
-  unitElements["Pikosekunden"].value.textContent = pad(pico%1000,3);
-  unitElements["Femtosekunden"].value.textContent = pad(femto%1000,3);
-  unitElements["Attosekunden"].value.textContent = pad(atto%1000,3);
+  unitElements["Mikrosekunden"].value.textContent = pad(Math.floor(micro % 1000),3);
+  unitElements["Nanosekunden"].value.textContent = pad(Math.floor(nano % 1000),3);
+  unitElements["Pikosekunden"].value.textContent = pad(Math.floor(pico % 1000),3);
+  unitElements["Femtosekunden"].value.textContent = pad(Math.floor(femto % 1000),3);
+  unitElements["Attosekunden"].value.textContent = pad(Math.floor(atto % 1000),3);
 
-  // Balken
+  // Balken flüssig
   unitElements["Millisekunden"].barFill.style.width = (ms/1000*100)+"%";
-  unitElements["Mikrosekunden"].barFill.style.width = (micro/1000*100)+"%";
-  unitElements["Nanosekunden"].barFill.style.width = (nano/1000*100)+"%";
-  unitElements["Pikosekunden"].barFill.style.width = (pico/1000*100)+"%";
-  unitElements["Femtosekunden"].barFill.style.width = (femto/1000*100)+"%";
-  unitElements["Attosekunden"].barFill.style.width = (atto/1000*100)+"%";
+  unitElements["Mikrosekunden"].barFill.style.width = ((micro%1000)/1000*100)+"%";
+  unitElements["Nanosekunden"].barFill.style.width = ((nano%1000)/1000*100)+"%";
+  unitElements["Pikosekunden"].barFill.style.width = ((pico%1000)/1000*100)+"%";
+  unitElements["Femtosekunden"].barFill.style.width = ((femto%1000)/1000*100)+"%";
+  unitElements["Attosekunden"].barFill.style.width = ((atto%1000)/1000*100)+"%";
 
   requestAnimationFrame(updateClock);
 }
