@@ -3,20 +3,53 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Realistische Atom-Uhr bis Attosekunden</title>
+<title>High-End Atom-Uhr Simulation</title>
 <style>
   body {
     background: #0a0a0a;
     color: #0affff;
     font-family: 'Courier New', monospace;
     display: flex;
+    flex-direction: column;
     justify-content: center;
     align-items: center;
     height: 100vh;
     font-size: 2em;
+    overflow: hidden;
   }
-  .clock { display: flex; gap: 10px; }
-  .unit { min-width: 60px; text-align: center; }
+
+  .clock {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 50px;
+  }
+  .unit {
+    min-width: 60px;
+    text-align: center;
+  }
+
+  /* Balken-Anzeige */
+  .bars {
+    display: flex;
+    gap: 5px;
+    width: 90%;
+    max-width: 1000px;
+  }
+  .bar-container {
+    flex: 1;
+    height: 15px;
+    background: #111;
+    border-radius: 5px;
+    overflow: hidden;
+    position: relative;
+  }
+  .bar-fill {
+    height: 100%;
+    width: 0%;
+    background: #0affff;
+    transition: width 0.05s linear;
+  }
+
 </style>
 </head>
 <body>
@@ -32,18 +65,32 @@
   <div class="unit" id="attoseconds">000</div>
 </div>
 
+<!-- Balkenanzeige -->
+<div class="bars">
+  <div class="bar-container"><div class="bar-fill" id="bar-ms"></div></div>
+  <div class="bar-container"><div class="bar-fill" id="bar-us"></div></div>
+  <div class="bar-container"><div class="bar-fill" id="bar-ns"></div></div>
+  <div class="bar-container"><div class="bar-fill" id="bar-ps"></div></div>
+  <div class="bar-container"><div class="bar-fill" id="bar-fs"></div></div>
+  <div class="bar-container"><div class="bar-fill" id="bar-as"></div></div>
+</div>
+
 <script>
   function pad(num, size) {
     let s = "000" + num;
     return s.substr(s.length - size);
   }
 
-  let startTime = new Date(); // synchronisierte Zeit beim Start
-  let startPerf = performance.now(); // High-Resolution Timer Start
+  let startTime = new Date(); // Initiale Zeit
+  let startPerf = performance.now();
+
+  // Tick Sound
+  const tick = new Audio("https://www.soundjay.com/button/sounds/button-16.mp3");
+  let lastSecond = -1;
 
   function updateClock() {
     const nowPerf = performance.now();
-    const elapsedMs = nowPerf - startPerf; // Millisekunden seit Start
+    const elapsedMs = nowPerf - startPerf;
     const now = new Date(startTime.getTime() + elapsedMs);
 
     // Minuten & Sekunden
@@ -51,12 +98,17 @@
     const seconds = now.getSeconds();
     const ms = now.getMilliseconds();
 
+    if(seconds !== lastSecond){
+      tick.play();
+      lastSecond = seconds;
+    }
+
     // Simulierte kleinste Einheiten
-    const micro = Math.floor((elapsedMs * 1000) % 1000);           // μs
-    const nano = Math.floor((elapsedMs * 1e6) % 1000);             // ns
-    const pico = Math.floor((elapsedMs * 1e9) % 1000);             // ps
-    const femto = Math.floor((elapsedMs * 1e12) % 1000);           // fs
-    const atto = Math.floor((elapsedMs * 1e15) % 1000);            // as
+    const micro = Math.floor((elapsedMs * 1000) % 1000);
+    const nano = Math.floor((elapsedMs * 1e6) % 1000);
+    const pico = Math.floor((elapsedMs * 1e9) % 1000);
+    const femto = Math.floor((elapsedMs * 1e12) % 1000);
+    const atto = Math.floor((elapsedMs * 1e15) % 1000);
 
     // Anzeige aktualisieren
     document.getElementById('minutes').textContent = pad(minutes,2);
@@ -67,6 +119,14 @@
     document.getElementById('picoseconds').textContent = pad(pico,3);
     document.getElementById('femtoseconds').textContent = pad(femto,3);
     document.getElementById('attoseconds').textContent = pad(atto,3);
+
+    // Balken füllen (progressiv)
+    document.getElementById('bar-ms').style.width = (ms/1000*100) + "%";
+    document.getElementById('bar-us').style.width = (micro/1000*100) + "%";
+    document.getElementById('bar-ns').style.width = (nano/1000*100) + "%";
+    document.getElementById('bar-ps').style.width = (pico/1000*100) + "%";
+    document.getElementById('bar-fs').style.width = (femto/1000*100) + "%";
+    document.getElementById('bar-as').style.width = (atto/1000*100) + "%";
 
     requestAnimationFrame(updateClock);
   }
