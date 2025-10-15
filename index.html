@@ -3,135 +3,178 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>High-End Atom-Uhr by aniportal.live</title>
+<title>Ultra High-End Atom Clock by aniportal.live</title>
 <style>
   body {
     background: #0a0a0a;
-    color: #0affff;
+    color: #fff;
     font-family: 'Courier New', monospace;
     display: flex;
-    flex-direction: column;
     justify-content: center;
-    align-items: center;
-    height: 100vh;
+    align-items: flex-start;
+    padding-top: 20px;
+  }
+  .clock-container {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    align-items: flex-start;
+  }
+  .unit-container {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .unit-label {
+    font-size: 1em;
+    margin-bottom: 2px;
+  }
+  .unit-value {
     font-size: 2em;
-    overflow: hidden;
-  }
-
-  .clock {
-    display: flex;
-    gap: 10px;
-    margin-bottom: 50px;
-  }
-  .unit {
-    min-width: 60px;
-    text-align: center;
-  }
-
-  /* Balken-Anzeige */
-  .bars {
-    display: flex;
-    gap: 5px;
-    width: 90%;
-    max-width: 1000px;
+    min-width: 120px;
   }
   .bar-container {
-    flex: 1;
-    height: 15px;
+    width: 100px;
+    height: 8px;
     background: #111;
-    border-radius: 5px;
+    border-radius: 4px;
     overflow: hidden;
-    position: relative;
+    margin-top: 2px;
   }
   .bar-fill {
     height: 100%;
     width: 0%;
-    background: #0affff;
-    transition: width 0.05s linear;
   }
-
 </style>
 </head>
 <body>
 
-<div class="clock">
-  <div class="unit" id="minutes">00</div>:
-  <div class="unit" id="seconds">00</div>:
-  <div class="unit" id="milliseconds">000</div>:
-  <div class="unit" id="microseconds">000</div>:
-  <div class="unit" id="nanoseconds">000</div>:
-  <div class="unit" id="picoseconds">000</div>:
-  <div class="unit" id="femtoseconds">000</div>:
-  <div class="unit" id="attoseconds">000</div>
-</div>
+<audio id="tick" src="atom-tick.mp3" preload="auto"></audio>
 
-<!-- Balkenanzeige -->
-<div class="bars">
-  <div class="bar-container"><div class="bar-fill" id="bar-ms"></div></div>
-  <div class="bar-container"><div class="bar-fill" id="bar-us"></div></div>
-  <div class="bar-container"><div class="bar-fill" id="bar-ns"></div></div>
-  <div class="bar-container"><div class="bar-fill" id="bar-ps"></div></div>
-  <div class="bar-container"><div class="bar-fill" id="bar-fs"></div></div>
-  <div class="bar-container"><div class="bar-fill" id="bar-as"></div></div>
+<div class="clock-container" id="clock">
+  <!-- Zeiteinheiten werden hier dynamisch erstellt -->
 </div>
 
 <script>
-  function pad(num, size) {
-    let s = "000" + num;
-    return s.substr(s.length - size);
-  }
+const units = [
+  {name: "Äonen", color: "#00ff00"},
+  {name: "Jahre", color: "#66ff00"},
+  {name: "Monate", color: "#ccff00"},
+  {name: "Tage", color: "#ffff00"},
+  {name: "Stunden", color: "#ffcc00"},
+  {name: "Minuten", color: "#ff9900"},
+  {name: "Sekunden", color: "#ff6600"},
+  {name: "Millisekunden", color: "#ff3300"},
+  {name: "Mikrosekunden", color: "#ff0000"},
+  {name: "Nanosekunden", color: "#cc0000"},
+  {name: "Pikosekunden", color: "#990000"},
+  {name: "Femtosekunden", color: "#660000"},
+  {name: "Attosekunden", color: "#330000"}
+];
 
-  let startTime = new Date(); // Initiale Zeit
-  let startPerf = performance.now();
+const clock = document.getElementById("clock");
+const unitElements = {};
 
-  // Tick Sound
-  const tick = new Audio("https://www.soundjay.com/button/sounds/button-16.mp3");
-  let lastSecond = -1;
+units.forEach(u => {
+  const container = document.createElement("div");
+  container.className = "unit-container";
+  
+  const label = document.createElement("div");
+  label.className = "unit-label";
+  label.textContent = u.name;
+  
+  const value = document.createElement("div");
+  value.className = "unit-value";
+  value.textContent = "00";
+  
+  const barContainer = document.createElement("div");
+  barContainer.className = "bar-container";
+  
+  const barFill = document.createElement("div");
+  barFill.className = "bar-fill";
+  barFill.style.background = u.color;
+  
+  barContainer.appendChild(barFill);
+  container.appendChild(label);
+  container.appendChild(value);
+  container.appendChild(barContainer);
+  
+  clock.appendChild(container);
+  unitElements[u.name] = {value, barFill};
+});
 
-  function updateClock() {
-    const nowPerf = performance.now();
-    const elapsedMs = nowPerf - startPerf;
-    const now = new Date(startTime.getTime() + elapsedMs);
+// Urknall Startzeit (ca. 13.8 Mrd Jahre)
+const bigBangTime = -13.8e9 * 365.25 * 24 * 3600 * 1000;
+const tick = document.getElementById("tick");
 
-    // Minuten & Sekunden
-    const minutes = now.getMinutes();
-    const seconds = now.getSeconds();
-    const ms = now.getMilliseconds();
+// Hilfsfunktionen
+function pad(num, size) {
+  let s = "000" + num;
+  return s.substr(s.length - size);
+}
 
-    if(seconds !== lastSecond){
-      tick.play();
-      lastSecond = seconds;
-    }
+// Letzte Werte für Tick-Sound
+let lastSecond = -1;
+let lastMs = -1;
+let lastMicro = -1;
 
-    // Simulierte kleinste Einheiten
-    const micro = Math.floor((elapsedMs * 1000) % 1000);
-    const nano = Math.floor((elapsedMs * 1e6) % 1000);
-    const pico = Math.floor((elapsedMs * 1e9) % 1000);
-    const femto = Math.floor((elapsedMs * 1e12) % 1000);
-    const atto = Math.floor((elapsedMs * 1e15) % 1000);
+function playTick(current, last) {
+  if(current !== last) tick.currentTime = 0, tick.play();
+}
 
-    // Anzeige aktualisieren
-    document.getElementById('minutes').textContent = pad(minutes,2);
-    document.getElementById('seconds').textContent = pad(seconds,2);
-    document.getElementById('milliseconds').textContent = pad(ms,3);
-    document.getElementById('microseconds').textContent = pad(micro,3);
-    document.getElementById('nanoseconds').textContent = pad(nano,3);
-    document.getElementById('picoseconds').textContent = pad(pico,3);
-    document.getElementById('femtoseconds').textContent = pad(femto,3);
-    document.getElementById('attoseconds').textContent = pad(atto,3);
+function updateClock() {
+  const now = Date.now();
+  const elapsedMs = now - bigBangTime;
 
-    // Balken füllen (progressiv)
-    document.getElementById('bar-ms').style.width = (ms/1000*100) + "%";
-    document.getElementById('bar-us').style.width = (micro/1000*100) + "%";
-    document.getElementById('bar-ns').style.width = (nano/1000*100) + "%";
-    document.getElementById('bar-ps').style.width = (pico/1000*100) + "%";
-    document.getElementById('bar-fs').style.width = (femto/1000*100) + "%";
-    document.getElementById('bar-as').style.width = (atto/1000*100) + "%";
+  const eon = Math.floor(elapsedMs / (1e9 * 365.25 * 24 * 3600 * 1000));
+  const year = Math.floor(elapsedMs / (365.25 * 24 * 3600 * 1000)) % 1e9;
+  const month = Math.floor((elapsedMs % (365.25 * 24 * 3600 * 1000)) / (30*24*3600*1000)) + 1;
+  const day = Math.floor((elapsedMs % (30*24*3600*1000)) / (24*3600*1000)) + 1;
+  const hour = Math.floor((elapsedMs % (24*3600*1000)) / (3600*1000));
+  const minute = Math.floor((elapsedMs % (3600*1000)) / (60*1000));
+  const second = Math.floor((elapsedMs % (60*1000)) / 1000);
+  const ms = Math.floor(elapsedMs % 1000);
 
-    requestAnimationFrame(updateClock);
-  }
+  const micro = Math.floor((elapsedMs * 1000) % 1000);
+  const nano = Math.floor((elapsedMs * 1e6) % 1000);
+  const pico = Math.floor((elapsedMs * 1e9) % 1000);
+  const femto = Math.floor((elapsedMs * 1e12) % 1000);
+  const atto = Math.floor((elapsedMs * 1e15) % 1000);
 
-  updateClock();
+  unitElements["Äonen"].value.textContent = eon;
+  unitElements["Jahre"].value.textContent = pad(year,9);
+  unitElements["Monate"].value.textContent = pad(month,2);
+  unitElements["Tage"].value.textContent = pad(day,2);
+  unitElements["Stunden"].value.textContent = pad(hour,2);
+  unitElements["Minuten"].value.textContent = pad(minute,2);
+  unitElements["Sekunden"].value.textContent = pad(second,2);
+  unitElements["Millisekunden"].value.textContent = pad(ms,3);
+  unitElements["Mikrosekunden"].value.textContent = pad(micro,3);
+  unitElements["Nanosekunden"].value.textContent = pad(nano,3);
+  unitElements["Pikosekunden"].value.textContent = pad(pico,3);
+  unitElements["Femtosekunden"].value.textContent = pad(femto,3);
+  unitElements["Attosekunden"].value.textContent = pad(atto,3);
+
+  // Balken füllen
+  unitElements["Millisekunden"].barFill.style.width = (ms/1000*100)+"%";
+  unitElements["Mikrosekunden"].barFill.style.width = (micro/1000*100)+"%";
+  unitElements["Nanosekunden"].barFill.style.width = (nano/1000*100)+"%";
+  unitElements["Pikosekunden"].barFill.style.width = (pico/1000*100)+"%";
+  unitElements["Femtosekunden"].barFill.style.width = (femto/1000*100)+"%";
+  unitElements["Attosekunden"].barFill.style.width = (atto/1000*100)+"%";
+
+  // Atom-Uhr Sound
+  playTick(second, lastSecond);
+  playTick(ms, lastMs);
+  playTick(micro, lastMicro);
+  lastSecond = second;
+  lastMs = ms;
+  lastMicro = micro;
+
+  requestAnimationFrame(updateClock);
+}
+
+updateClock();
 </script>
 
 </body>
