@@ -1,93 +1,78 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Atomuhr bis Attosekunden</title>
-  <style>
-    body {
-      background: #0a0a0a;
-      color: #0affff;
-      font-family: 'Courier New', monospace;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      font-size: 2em;
-    }
-    .clock {
-      display: flex;
-      gap: 10px;
-    }
-    .unit {
-      min-width: 60px;
-      text-align: center;
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Realistische Atom-Uhr bis Attosekunden</title>
+<style>
+  body {
+    background: #0a0a0a;
+    color: #0affff;
+    font-family: 'Courier New', monospace;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    font-size: 2em;
+  }
+  .clock { display: flex; gap: 10px; }
+  .unit { min-width: 60px; text-align: center; }
+</style>
 </head>
 <body>
-  <div class="clock">
-    <div class="unit" id="minutes">00</div>:
-    <div class="unit" id="seconds">00</div>:
-    <div class="unit" id="milliseconds">000</div>:
-    <div class="unit" id="microseconds">000</div>:
-    <div class="unit" id="nanoseconds">000</div>:
-    <div class="unit" id="picoseconds">000</div>:
-    <div class="unit" id="femtoseconds">000</div>:
-    <div class="unit" id="attoseconds">000</div>
-  </div>
 
-  <script>
-    const ntpServer = 'pool.ntp.org';
+<div class="clock">
+  <div class="unit" id="minutes">00</div>:
+  <div class="unit" id="seconds">00</div>:
+  <div class="unit" id="milliseconds">000</div>:
+  <div class="unit" id="microseconds">000</div>:
+  <div class="unit" id="nanoseconds">000</div>:
+  <div class="unit" id="picoseconds">000</div>:
+  <div class="unit" id="femtoseconds">000</div>:
+  <div class="unit" id="attoseconds">000</div>
+</div>
 
-    function pad(num, size) {
-      let s = "000" + num;
-      return s.substr(s.length - size);
-    }
+<script>
+  function pad(num, size) {
+    let s = "000" + num;
+    return s.substr(s.length - size);
+  }
 
-    async function fetchNtpTime() {
-      try {
-        const response = await fetch(`https://worldtimeapi.org/api/timezone/Etc/UTC`);
-        const data = await response.json();
-        const serverTime = new Date(data.utc_datetime);
-        return serverTime;
-      } catch (error) {
-        console.error('Fehler beim Abrufen der NTP-Zeit:', error);
-        return new Date();
-      }
-    }
+  let startTime = new Date(); // synchronisierte Zeit beim Start
+  let startPerf = performance.now(); // High-Resolution Timer Start
 
-    function updateClock() {
-      fetchNtpTime().then(serverTime => {
-        const now = performance.now();
-        const elapsed = now - start; // Millisekunden seit Start
+  function updateClock() {
+    const nowPerf = performance.now();
+    const elapsedMs = nowPerf - startPerf; // Millisekunden seit Start
+    const now = new Date(startTime.getTime() + elapsedMs);
 
-        const minutes = serverTime.getUTCMinutes();
-        const seconds = serverTime.getUTCSeconds();
-        const ms = serverTime.getUTCMilliseconds();
+    // Minuten & Sekunden
+    const minutes = now.getMinutes();
+    const seconds = now.getSeconds();
+    const ms = now.getMilliseconds();
 
-        let totalNano = Math.floor(elapsed * 1e6); // 1ms = 1e6 ns
-        const micro = Math.floor(totalNano / 1000) % 1000;
-        const nano = totalNano % 1000;
-        const pico = Math.floor(totalNano * 1e3) % 1000;
-        const femto = Math.floor(totalNano * 1e6) % 1000;
-        const atto = Math.floor(totalNano * 1e9) % 1000;
+    // Simulierte kleinste Einheiten
+    const micro = Math.floor((elapsedMs * 1000) % 1000);           // μs
+    const nano = Math.floor((elapsedMs * 1e6) % 1000);             // ns
+    const pico = Math.floor((elapsedMs * 1e9) % 1000);             // ps
+    const femto = Math.floor((elapsedMs * 1e12) % 1000);           // fs
+    const atto = Math.floor((elapsedMs * 1e15) % 1000);            // as
 
-        document.getElementById('minutes').textContent = pad(minutes, 2);
-        document.getElementById('seconds').textContent = pad(seconds, 2);
-        document.getElementById('milliseconds').textContent = pad(ms, 3);
-        document.getElementById('microseconds').textContent = pad(micro, 3);
-        document.getElementById('nanoseconds').textContent = pad(nano, 3);
-        document.getElementById('picoseconds').textContent = pad(pico, 3);
-        document.getElementById('femtoseconds').textContent = pad(femto, 3);
-        document.getElementById('attoseconds').textContent = pad(atto, 3);
+    // Anzeige aktualisieren
+    document.getElementById('minutes').textContent = pad(minutes,2);
+    document.getElementById('seconds').textContent = pad(seconds,2);
+    document.getElementById('milliseconds').textContent = pad(ms,3);
+    document.getElementById('microseconds').textContent = pad(micro,3);
+    document.getElementById('nanoseconds').textContent = pad(nano,3);
+    document.getElementById('picoseconds').textContent = pad(pico,3);
+    document.getElementById('femtoseconds').textContent = pad(femto,3);
+    document.getElementById('attoseconds').textContent = pad(atto,3);
 
-        requestAnimationFrame(updateClock);
-      });
-    }
+    requestAnimationFrame(updateClock);
+  }
 
-    const start = performance.now();
-    updateClock();
-  </script>
+  updateClock();
+</script>
+
 </body>
 </html>
