@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Ultra High-End Atom Clock by aniportal.live</title>
+<title>Ultra High-End Atom Clock</title>
 <style>
   body {
     background: #0a0a0a;
@@ -31,7 +31,7 @@
   }
   .unit-value {
     font-size: 2em;
-    min-width: 120px;
+    min-width: 100px;
   }
   .bar-container {
     width: 100px;
@@ -53,19 +53,15 @@
 
 <script>
 const units = [
-  {name: "Äonen", color: "#00ff00"},
-  {name: "Jahre", color: "#66ff00"},
-  {name: "Monate", color: "#ccff00"},
-  {name: "Tage", color: "#ffff00"},
-  {name: "Stunden", color: "#ffcc00"},
-  {name: "Minuten", color: "#ff9900"},
-  {name: "Sekunden", color: "#ff6600"},
-  {name: "Millisekunden", color: "#ff3300"},
-  {name: "Mikrosekunden", color: "#ff0000"},
-  {name: "Nanosekunden", color: "#cc0000"},
-  {name: "Pikosekunden", color: "#990000"},
-  {name: "Femtosekunden", color: "#660000"},
-  {name: "Attosekunden", color: "#330000"}
+  {name: "Stunden", color: "#ffff00"},
+  {name: "Minuten", color: "#ffcc00"},
+  {name: "Sekunden", color: "#ff9900"},
+  {name: "Millisekunden", color: "#ff6600"},
+  {name: "Mikrosekunden", color: "#ff3300"},
+  {name: "Nanosekunden", color: "#ff0000"},
+  {name: "Pikosekunden", color: "#cc0000"},
+  {name: "Femtosekunden", color: "#990000"},
+  {name: "Attosekunden", color: "#660000"}
 ];
 
 const clock = document.getElementById("clock");
@@ -99,50 +95,34 @@ units.forEach(u => {
   unitElements[u.name] = {value, barFill};
 });
 
-// Wir simulieren die Zeit seit dem Urknall, aber normalisiert
-const bigBangYears = 13.8e9; // Jahre seit Urknall
-const startTime = performance.now();
-
 function pad(num, size) {
   let s = "000" + num;
   return s.substr(s.length - size);
 }
 
 function updateClock() {
-  const elapsedMs = performance.now() - startTime;
-  const elapsedSeconds = elapsedMs / 1000;
+  const now = new Date();
+  const hour = now.getHours();
+  const minute = now.getMinutes();
+  const second = now.getSeconds();
+  const ms = now.getMilliseconds();
 
-  // Simulation: 1 Jahr = 1 Sekunde für flüssige Animation
-  const yearsElapsed = bigBangYears + elapsedSeconds; // addiert fiktiv jedes Sekunde ein Jahr
-  const eon = Math.floor(yearsElapsed / 1e9);
-  const year = Math.floor(yearsElapsed % 1e9);
+  // Mikro-, Nano-, Piko-, Femto-, Attosekunden aus ms
+  const micro = Math.floor(ms * 1000);
+  const nano = Math.floor(ms * 1e6);
+  const pico = Math.floor(ms * 1e9);
+  const femto = Math.floor(ms * 1e12);
+  const atto = Math.floor(ms * 1e15);
 
-  const month = Math.floor((elapsedSeconds % (30*24*3600)) / (30*24*3600/12)) + 1;
-  const day = Math.floor((elapsedSeconds % (30*24*3600)) / (24*3600)) + 1;
-  const hour = Math.floor((elapsedSeconds % (24*3600)) / 3600);
-  const minute = Math.floor((elapsedSeconds % 3600) / 60);
-  const second = Math.floor(elapsedSeconds % 60);
-  const ms = Math.floor(elapsedMs % 1000);
-
-  const micro = Math.floor((elapsedMs * 1000) % 1000);
-  const nano = Math.floor((elapsedMs * 1e6) % 1000);
-  const pico = Math.floor((elapsedMs * 1e9) % 1000);
-  const femto = Math.floor((elapsedMs * 1e12) % 1000);
-  const atto = Math.floor((elapsedMs * 1e15) % 1000);
-
-  unitElements["Äonen"].value.textContent = eon;
-  unitElements["Jahre"].value.textContent = pad(year,9);
-  unitElements["Monate"].value.textContent = pad(month,2);
-  unitElements["Tage"].value.textContent = pad(day,2);
   unitElements["Stunden"].value.textContent = pad(hour,2);
   unitElements["Minuten"].value.textContent = pad(minute,2);
   unitElements["Sekunden"].value.textContent = pad(second,2);
   unitElements["Millisekunden"].value.textContent = pad(ms,3);
-  unitElements["Mikrosekunden"].value.textContent = pad(micro,3);
-  unitElements["Nanosekunden"].value.textContent = pad(nano,3);
-  unitElements["Pikosekunden"].value.textContent = pad(pico,3);
-  unitElements["Femtosekunden"].value.textContent = pad(femto,3);
-  unitElements["Attosekunden"].value.textContent = pad(atto,3);
+  unitElements["Mikrosekunden"].value.textContent = pad(micro%1000,3);
+  unitElements["Nanosekunden"].value.textContent = pad(nano%1000,3);
+  unitElements["Pikosekunden"].value.textContent = pad(pico%1000,3);
+  unitElements["Femtosekunden"].value.textContent = pad(femto%1000,3);
+  unitElements["Attosekunden"].value.textContent = pad(atto%1000,3);
 
   // Balken
   unitElements["Millisekunden"].barFill.style.width = (ms/1000*100)+"%";
